@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/ChristopheCVB/coolify-deploy-action/compare/v1.0.0...v1.1.0) (2025-07-05)
+
+
+### Features
+
+* **action:** add icon and color to deployment action ([745dd56](https://github.com/ChristopheCVB/coolify-deploy-action/commit/745dd56fd6a4583166db0f1121a7cf326c436ae2))
+
 ## 1.0.0 (2025-07-05)
 
 
