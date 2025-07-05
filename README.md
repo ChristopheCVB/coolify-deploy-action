@@ -27,6 +27,7 @@ A reusable GitHub Action for deploying applications to Coolify with optional dep
     force: true
     waitForDeploy: true
     timeout: 600
+    interval: 20
 ```
 
 ## Inputs
@@ -39,6 +40,7 @@ A reusable GitHub Action for deploying applications to Coolify with optional dep
 | `force` | Force rebuild (without cache) | ❌ No | `false` |
 | `waitForDeploy` | Wait for deployment to complete | ❌ No | `false` |
 | `timeout` | Timeout in seconds for deployment waiting | ❌ No | `300` |
+| `interval` | Interval in seconds for deployment waiting | ❌ No | `10` |
 
 ## Features
 
@@ -94,6 +96,7 @@ jobs:
           force: false
           waitForDeploy: true
           timeout: 600
+          interval: 20
 ```
 
 ## Requirements
