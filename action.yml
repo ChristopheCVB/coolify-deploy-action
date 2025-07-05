@@ -1,0 +1,122 @@
+name: 'Deploy to Coolify'
+description: 'Deploy an application to Coolify with optional deployment waiting'
+
+inputs:
+  token:
+    description: 'Coolify API token'
+    required: true
+  domain:
+    description: 'Coolify domain (without https://)'
+    required: true
+  app_uuid:
+    description: 'Application UUID to deploy'
+    required: true
+  force:
+    description: 'Force rebuild (without cache)'
+    required: false
+    default: 'false'
+  waitForDeploy:
+    description: 'Wait for deployment to complete'
+    required: false
+    default: 'false'
+  timeout:
+    description: 'Timeout in seconds for deployment waiting'
+    required: false
+    default: '300'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Deploy to Coolify
+      shell: bash
+      run: |
+        echo "🚀 Deploying to Coolify..."
+        
+        # Build the API URL
+        API_URL="https://${{ inputs.domain }}/api/v1/deploy?uuid=${{ inputs.app_uuid }}&force=${{ inputs.force }}"
+        
+        # Make the deployment request
+        echo "Making deployment request to: $API_URL"
+        DEPLOY_RESPONSE=$(curl -s -w "\n%{http_code}" \
+          -H "Authorization: Bearer ${{ inputs.token }}" \
+          -H "Content-Type: application/json" \
+          "$API_URL")
+        
+        # Extract response body and status code
+        HTTP_STATUS=$(echo "$DEPLOY_RESPONSE" | tail -n1)
+        RESPONSE_BODY=$(echo "$DEPLOY_RESPONSE" | head -n -1)
+        
+        echo "Response status: $HTTP_STATUS"
+        echo "Response body: $RESPONSE_BODY"
+        
+        # Check if deployment was successful
+        if [ "$HTTP_STATUS" -eq 200 ]; then
+          echo "✅ Deployment request successful"
+          
+          # Extract deployment UUID if waiting is enabled
+          if [ "${{ inputs.waitForDeploy }}" = "true" ]; then
+            DEPLOYMENT_UUID=$(echo "$RESPONSE_BODY" | jq -r '.deployments[0].deployment_uuid // empty')
+            
+            if [ -n "$DEPLOYMENT_UUID" ]; then
+              echo "⏳ Waiting for deployment $DEPLOYMENT_UUID to complete..."
+              
+              # Wait for deployment to complete
+              TIMEOUT=${{ inputs.timeout }}
+              ELAPSED=0
+              INTERVAL=10
+              
+              while [ $ELAPSED -lt $TIMEOUT ]; do
+                # Get deployment status
+                STATUS_RESPONSE=$(curl -s -w "\n%{http_code}" \
+                  -H "Authorization: Bearer ${{ inputs.token }}" \
+                  "https://${{ inputs.domain }}/api/v1/deployments/$DEPLOYMENT_UUID")
+                
+                STATUS_HTTP=$(echo "$STATUS_RESPONSE" | tail -n1)
+                STATUS_BODY=$(echo "$STATUS_RESPONSE" | head -n -1)
+                
+                if [ "$STATUS_HTTP" -eq 200 ]; then
+                  DEPLOYMENT_STATUS=$(echo "$STATUS_BODY" | jq -r '.status // empty')
+                  
+                  echo "Deployment status: $DEPLOYMENT_STATUS"
+                  
+                  case $DEPLOYMENT_STATUS in
+                    "successful"|"finished")
+                      echo "✅ Deployment completed successfully!"
+                      exit 0
+                      ;;
+                    "failed"|"cancelled"|"skipped")
+                      echo "❌ Deployment failed with status: $DEPLOYMENT_STATUS"
+                      exit 1
+                      ;;
+                    "running"|"pending"|"queued"|"in_progress"|"processing")
+                      echo "⏳ Deployment still in progress... (${ELAPSED}s/${TIMEOUT}s)"
+                      sleep $INTERVAL
+                      ELAPSED=$((ELAPSED + INTERVAL))
+                      ;;
+                    *)
+                      echo "⚠️ Unknown deployment status: $DEPLOYMENT_STATUS"
+                      sleep $INTERVAL
+                      ELAPSED=$((ELAPSED + INTERVAL))
+                      ;;
+                  esac
+                else
+                  echo "⚠️ Failed to get deployment status (HTTP $STATUS_HTTP)"
+                  sleep $INTERVAL
+                  ELAPSED=$((ELAPSED + INTERVAL))
+                fi
+              done
+              
+              echo "⏰ Deployment timeout reached after ${TIMEOUT}s"
+              exit 1
+            else
+              echo "⚠️ Could not extract deployment UUID from response"
+              exit 1
+            fi
+          else
+            echo "✅ Deployment request sent successfully (not waiting for completion)"
+          fi
+        else
+          echo "❌ Deployment request failed with HTTP status: $HTTP_STATUS"
+          echo "Response: $RESPONSE_BODY"
+          exit 1
+        fi 
