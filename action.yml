@@ -26,6 +26,10 @@ inputs:
     description: 'Timeout in seconds for deployment waiting'
     required: false
     default: '300'
+  interval:
+    description: 'Interval in seconds for deployment waiting'
+    required: false
+    default: '10'
 
 runs:
   using: 'composite'
@@ -66,7 +70,7 @@ runs:
               # Wait for deployment to complete
               TIMEOUT=${{ inputs.timeout }}
               ELAPSED=0
-              INTERVAL=10
+              INTERVAL=${{ inputs.interval }}
               
               while [ $ELAPSED -lt $TIMEOUT ]; do
                 # Get deployment status
