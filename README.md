@@ -8,7 +8,7 @@ A reusable GitHub Action for deploying applications to Coolify with optional dep
 
 ```yaml
 - name: Deploy to Coolify
-  uses: ./.github/actions/deploy-coolify
+  uses: christophecvb/deploy-coolify-action@v1
   with:
     token: ${{ secrets.COOLIFY_API_TOKEN }}
     domain: 'your-coolify-domain.com'
@@ -19,7 +19,7 @@ A reusable GitHub Action for deploying applications to Coolify with optional dep
 
 ```yaml
 - name: Deploy and Wait
-  uses: ./.github/actions/deploy-coolify
+  uses: christophecvb/deploy-coolify-action@v1
   with:
     token: ${{ secrets.COOLIFY_API_TOKEN }}
     domain: 'your-coolify-domain.com'
@@ -86,7 +86,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Deploy Application
-        uses: ./.github/actions/deploy-coolify
+        uses: christophecvb/deploy-coolify-action@v1
         with:
           token: ${{ secrets.COOLIFY_API_TOKEN }}
           domain: ${{ vars.COOLIFY_DOMAIN }}
