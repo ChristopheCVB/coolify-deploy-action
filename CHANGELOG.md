@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/ChristopheCVB/coolify-deploy-action/compare/v1.2.0...v1.3.0) (2025-07-05)
+
+
+### Features
+
+* **action:** add interval input for deployment waiting ([#4](https://github.com/ChristopheCVB/coolify-deploy-action/issues/4)) ([5b54494](https://github.com/ChristopheCVB/coolify-deploy-action/commit/5b544942dd40fa901f69cb39a4870f298b4bb92b))
+
 ## [1.2.0](https://github.com/ChristopheCVB/coolify-deploy-action/compare/v1.1.0...v1.2.0) (2025-07-05)
 
 
