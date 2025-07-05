@@ -1,7 +1,8 @@
 name: 'Deploy to Coolify'
 description: 'Deploy an application to Coolify with optional deployment waiting'
-icon: 'upload-cloud'
-color: 'purple'
+branding:
+  icon: 'upload-cloud'
+  color: 'purple'
 
 inputs:
   token:
