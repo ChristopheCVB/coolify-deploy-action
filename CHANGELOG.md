@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.0.0](https://github.com/ChristopheCVB/coolify-deploy-action/compare/v2.0.0...v3.0.0) (2025-07-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* rename app_uuid to uuid for consistency with coolify docs
+
+### Features
+
+* rename app_uuid to uuid for consistency with coolify docs ([6c10c10](https://github.com/ChristopheCVB/coolify-deploy-action/commit/6c10c104d95fff78f12963c6f8211b9b1f4b6b7e))
+
 ## [2.0.0](https://github.com/ChristopheCVB/coolify-deploy-action/compare/v1.3.0...v2.0.0) (2025-07-06)
 
 
