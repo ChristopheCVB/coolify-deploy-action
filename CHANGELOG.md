@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.0.0](https://github.com/ChristopheCVB/coolify-deploy-action/compare/v1.3.0...v2.0.0) (2025-07-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* rename app_uuid to uuid for consistency with coolify docs
+
+### Features
+
+* handle multiple deployments & configurable interval ([#6](https://github.com/ChristopheCVB/coolify-deploy-action/issues/6)) ([48c2dd7](https://github.com/ChristopheCVB/coolify-deploy-action/commit/48c2dd7323f601a7c43b7b206da1bffecfdd0d80))
+* rename app_uuid to uuid for consistency with coolify docs ([a99af0d](https://github.com/ChristopheCVB/coolify-deploy-action/commit/a99af0d57000d60ed6d56ae767ac073c35f742c8))
+
 ## [1.3.0](https://github.com/ChristopheCVB/coolify-deploy-action/compare/v1.2.0...v1.3.0) (2025-07-05)
 
 
