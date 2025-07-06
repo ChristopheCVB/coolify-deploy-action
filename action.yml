@@ -13,7 +13,13 @@ inputs:
     required: true
   app_uuid:
     description: 'Application UUID to deploy'
-    required: true
+    required: false
+  tag:
+    description: 'Tag name(s) to deploy. Comma separated list is also accepted.'
+    required: false
+  pr:
+    description: 'Pull Request Id for deploying specific PR builds. Cannot be used with tag parameter.'
+    required: false
   force:
     description: 'Force rebuild (without cache)'
     required: false
@@ -39,8 +45,35 @@ runs:
       run: |
         echo "🚀 Deploying to Coolify..."
         
-        # Build the API URL
-        API_URL="https://${{ inputs.domain }}/api/v1/deploy?uuid=${{ inputs.app_uuid }}&force=${{ inputs.force }}"
+        # Validate required parameters
+        if [ -z "${{ inputs.app_uuid }}" ] && [ -z "${{ inputs.tag }}" ] && [ -z "${{ inputs.pr }}" ]; then
+          echo "❌ Error: At least one of app_uuid, tag, or pr must be provided"
+          exit 1
+        fi
+        
+        # Validate that tag and pr are not used together
+        if [ -n "${{ inputs.tag }}" ] && [ -n "${{ inputs.pr }}" ]; then
+          echo "❌ Error: Cannot use both tag and pr parameters together"
+          exit 1
+        fi
+        
+        # Build the API URL with parameters
+        API_URL="https://${{ inputs.domain }}/api/v1/deploy?force=${{ inputs.force }}"
+        
+        # Add uuid parameter if provided
+        if [ -n "${{ inputs.app_uuid }}" ]; then
+          API_URL="$API_URL&uuid=${{ inputs.app_uuid }}"
+        fi
+        
+        # Add tag parameter if provided
+        if [ -n "${{ inputs.tag }}" ]; then
+          API_URL="$API_URL&tag=${{ inputs.tag }}"
+        fi
+        
+        # Add pr parameter if provided
+        if [ -n "${{ inputs.pr }}" ]; then
+          API_URL="$API_URL&pr=${{ inputs.pr }}"
+        fi
         
         # Make the deployment request
         echo "Making deployment request to: $API_URL"
@@ -60,63 +93,86 @@ runs:
         if [ "$HTTP_STATUS" -eq 200 ]; then
           echo "✅ Deployment request successful"
           
-          # Extract deployment UUID if waiting is enabled
+          # Extract deployment UUIDs if waiting is enabled
           if [ "${{ inputs.waitForDeploy }}" = "true" ]; then
-            DEPLOYMENT_UUID=$(echo "$RESPONSE_BODY" | jq -r '.deployments[0].deployment_uuid // empty')
+            # Extract all deployment UUIDs from the response
+            DEPLOYMENT_UUIDS=$(echo "$RESPONSE_BODY" | jq -r '.deployments[]?.deployment_uuid // empty' | tr '\n' ' ')
             
-            if [ -n "$DEPLOYMENT_UUID" ]; then
-              echo "⏳ Waiting for deployment $DEPLOYMENT_UUID to complete..."
+            if [ -n "$DEPLOYMENT_UUIDS" ]; then
+              # Convert to array and count deployments
+              DEPLOYMENT_ARRAY=($DEPLOYMENT_UUIDS)
+              DEPLOYMENT_COUNT=${#DEPLOYMENT_ARRAY[@]}
               
-              # Wait for deployment to complete
+              echo "⏳ Waiting for $DEPLOYMENT_COUNT deployment(s) to complete..."
+              echo "Deployment UUIDs: $DEPLOYMENT_UUIDS"
+              
+              # Wait for all deployments to complete
               TIMEOUT=${{ inputs.timeout }}
               ELAPSED=0
               INTERVAL=${{ inputs.interval }}
               
               while [ $ELAPSED -lt $TIMEOUT ]; do
-                # Get deployment status
-                STATUS_RESPONSE=$(curl -s -w "\n%{http_code}" \
-                  -H "Authorization: Bearer ${{ inputs.token }}" \
-                  "https://${{ inputs.domain }}/api/v1/deployments/$DEPLOYMENT_UUID")
+                COMPLETED_COUNT=0
+                FAILED_COUNT=0
+                IN_PROGRESS_COUNT=0
                 
-                STATUS_HTTP=$(echo "$STATUS_RESPONSE" | tail -n1)
-                STATUS_BODY=$(echo "$STATUS_RESPONSE" | head -n -1)
+                # Check status of each deployment
+                for DEPLOYMENT_UUID in "${DEPLOYMENT_ARRAY[@]}"; do
+                  # Get deployment status
+                  STATUS_RESPONSE=$(curl -s -w "\n%{http_code}" \
+                    -H "Authorization: Bearer ${{ inputs.token }}" \
+                    "https://${{ inputs.domain }}/api/v1/deployments/$DEPLOYMENT_UUID")
+                  
+                  STATUS_HTTP=$(echo "$STATUS_RESPONSE" | tail -n1)
+                  STATUS_BODY=$(echo "$STATUS_RESPONSE" | head -n -1)
+                  
+                  if [ "$STATUS_HTTP" -eq 200 ]; then
+                    DEPLOYMENT_STATUS=$(echo "$STATUS_BODY" | jq -r '.status // empty')
+                    
+                    case $DEPLOYMENT_STATUS in
+                      "successful"|"finished")
+                        COMPLETED_COUNT=$((COMPLETED_COUNT + 1))
+                        ;;
+                      "failed"|"cancelled"|"skipped")
+                        FAILED_COUNT=$((FAILED_COUNT + 1))
+                        echo "❌ Deployment $DEPLOYMENT_UUID failed with status: $DEPLOYMENT_STATUS"
+                        ;;
+                      "running"|"pending"|"queued"|"in_progress"|"processing")
+                        IN_PROGRESS_COUNT=$((IN_PROGRESS_COUNT + 1))
+                        ;;
+                      *)
+                        IN_PROGRESS_COUNT=$((IN_PROGRESS_COUNT + 1))
+                        echo "⚠️ Deployment $DEPLOYMENT_UUID has unknown status: $DEPLOYMENT_STATUS"
+                        ;;
+                    esac
+                  else
+                    IN_PROGRESS_COUNT=$((IN_PROGRESS_COUNT + 1))
+                    echo "⚠️ Failed to get status for deployment $DEPLOYMENT_UUID (HTTP $STATUS_HTTP)"
+                  fi
+                done
                 
-                if [ "$STATUS_HTTP" -eq 200 ]; then
-                  DEPLOYMENT_STATUS=$(echo "$STATUS_BODY" | jq -r '.status // empty')
-                  
-                  echo "Deployment status: $DEPLOYMENT_STATUS"
-                  
-                  case $DEPLOYMENT_STATUS in
-                    "successful"|"finished")
-                      echo "✅ Deployment completed successfully!"
-                      exit 0
-                      ;;
-                    "failed"|"cancelled"|"skipped")
-                      echo "❌ Deployment failed with status: $DEPLOYMENT_STATUS"
-                      exit 1
-                      ;;
-                    "running"|"pending"|"queued"|"in_progress"|"processing")
-                      echo "⏳ Deployment still in progress... (${ELAPSED}s/${TIMEOUT}s)"
-                      sleep $INTERVAL
-                      ELAPSED=$((ELAPSED + INTERVAL))
-                      ;;
-                    *)
-                      echo "⚠️ Unknown deployment status: $DEPLOYMENT_STATUS"
-                      sleep $INTERVAL
-                      ELAPSED=$((ELAPSED + INTERVAL))
-                      ;;
-                  esac
+                # Log progress
+                echo "📊 Deployment progress: $COMPLETED_COUNT completed, $FAILED_COUNT failed, $IN_PROGRESS_COUNT in progress (${ELAPSED}s/${TIMEOUT}s)"
+                
+                # Check if all deployments are complete
+                if [ $FAILED_COUNT -gt 0 ]; then
+                  echo "❌ $FAILED_COUNT deployment(s) failed. Stopping wait."
+                  exit 1
+                elif [ $COMPLETED_COUNT -eq $DEPLOYMENT_COUNT ]; then
+                  echo "✅ All $DEPLOYMENT_COUNT deployment(s) completed successfully!"
+                  exit 0
                 else
-                  echo "⚠️ Failed to get deployment status (HTTP $STATUS_HTTP)"
+                  # Still waiting for some deployments
                   sleep $INTERVAL
                   ELAPSED=$((ELAPSED + INTERVAL))
                 fi
               done
               
               echo "⏰ Deployment timeout reached after ${TIMEOUT}s"
+              echo "Final status: $COMPLETED_COUNT completed, $FAILED_COUNT failed, $IN_PROGRESS_COUNT still in progress"
               exit 1
             else
-              echo "⚠️ Could not extract deployment UUID from response"
+              echo "⚠️ Could not extract deployment UUIDs from response"
               exit 1
             fi
           else
