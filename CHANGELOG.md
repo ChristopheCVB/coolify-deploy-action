@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.0.1](https://github.com/ChristopheCVB/coolify-deploy-action/compare/v3.0.0...v3.0.1) (2025-07-06)
+
+
+### Bug Fixes
+
+* update domain input to be optional with a default value in action.yml and README ([b16afe3](https://github.com/ChristopheCVB/coolify-deploy-action/commit/b16afe3645a540b7d52d76850e65ae93938b6f38))
+
 ## [3.0.0](https://github.com/ChristopheCVB/coolify-deploy-action/compare/v2.0.0...v3.0.0) (2025-07-06)
 
 
