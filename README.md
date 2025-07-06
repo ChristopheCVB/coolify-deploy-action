@@ -69,7 +69,7 @@ A reusable GitHub Action for deploying applications to Coolify with optional dep
 |-------|-------------|----------|---------|
 | `token` | Coolify API token | ✅ Yes | - |
 | `domain` | Coolify domain (without https://) | ✅ Yes | - |
-| `app_uuid` | Application UUID to deploy | ❌ No* | - |
+| `app_uuid` | Resource UUID(s). Comma separated list is also accepted. | ❌ No* | - |
 | `tag` | Tag name(s) to deploy. Comma separated list is also accepted | ❌ No* | - |
 | `pr` | Pull Request Id for deploying specific PR builds. Cannot be used with tag parameter | ❌ No* | - |
 | `force` | Force rebuild (without cache) | ❌ No | `false` |
