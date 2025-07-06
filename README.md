@@ -12,7 +12,7 @@ A reusable GitHub Action for deploying applications to Coolify with optional dep
   with:
     token: ${{ secrets.COOLIFY_API_TOKEN }}
     domain: 'your-coolify-domain.com'
-    app_uuid: 'your-app-uuid'
+    uuid: 'your-uuid'
 ```
 
 ### Deploy by Tag
@@ -56,7 +56,7 @@ A reusable GitHub Action for deploying applications to Coolify with optional dep
   with:
     token: ${{ secrets.COOLIFY_API_TOKEN }}
     domain: 'your-coolify-domain.com'
-    app_uuid: 'your-app-uuid'
+    uuid: 'your-uuid'
     force: true
     waitForDeploy: true
     timeout: 600
@@ -69,7 +69,7 @@ A reusable GitHub Action for deploying applications to Coolify with optional dep
 |-------|-------------|----------|---------|
 | `token` | Coolify API token | ✅ Yes | - |
 | `domain` | Coolify domain (without https://) | ✅ Yes | - |
-| `app_uuid` | Resource UUID(s). Comma separated list is also accepted. | ❌ No* | - |
+| `uuid` | Resource UUID(s). Comma separated list is also accepted. | ❌ No* | - |
 | `tag` | Tag name(s) to deploy. Comma separated list is also accepted | ❌ No* | - |
 | `pr` | Pull Request Id for deploying specific PR builds. Cannot be used with tag parameter | ❌ No* | - |
 | `force` | Force rebuild (without cache) | ❌ No | `false` |
@@ -77,7 +77,7 @@ A reusable GitHub Action for deploying applications to Coolify with optional dep
 | `timeout` | Timeout in seconds for deployment waiting | ❌ No | `300` |
 | `interval` | Interval in seconds for deployment waiting | ❌ No | `10` |
 
-*At least one of `app_uuid`, `tag`, or `pr` must be provided. `tag` and `pr` cannot be used together.
+*At least one of `uuid`, `tag`, or `pr` must be provided. `tag` and `pr` cannot be used together.
 
 ## Features
 
@@ -173,7 +173,7 @@ name: Manual Deploy
 on:
   workflow_dispatch:
     inputs:
-      app_uuid:
+      uuid:
         description: 'Application UUID'
         required: true
       force:
@@ -190,7 +190,7 @@ jobs:
         with:
           token: ${{ secrets.COOLIFY_API_TOKEN }}
           domain: ${{ vars.COOLIFY_DOMAIN }}
-          app_uuid: ${{ github.event.inputs.app_uuid }}
+          uuid: ${{ github.event.inputs.uuid }}
           force: ${{ github.event.inputs.force }}
           waitForDeploy: true
           timeout: 600

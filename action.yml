@@ -11,8 +11,8 @@ inputs:
   domain:
     description: 'Coolify domain (without https://)'
     required: true
-  app_uuid:
-    description: 'Application UUID to deploy'
+  uuid:
+    description: 'Resource UUID(s). Comma separated list is also accepted.'
     required: false
   tag:
     description: 'Tag name(s) to deploy. Comma separated list is also accepted.'
@@ -46,8 +46,8 @@ runs:
         echo "🚀 Deploying to Coolify..."
         
         # Validate required parameters
-        if [ -z "${{ inputs.app_uuid }}" ] && [ -z "${{ inputs.tag }}" ] && [ -z "${{ inputs.pr }}" ]; then
-          echo "❌ Error: At least one of app_uuid, tag, or pr must be provided"
+        if [ -z "${{ inputs.uuid }}" ] && [ -z "${{ inputs.tag }}" ] && [ -z "${{ inputs.pr }}" ]; then
+          echo "❌ Error: At least one of uuid, tag, or pr must be provided"
           exit 1
         fi
         
@@ -61,8 +61,8 @@ runs:
         API_URL="https://${{ inputs.domain }}/api/v1/deploy?force=${{ inputs.force }}"
         
         # Add uuid parameter if provided
-        if [ -n "${{ inputs.app_uuid }}" ]; then
-          API_URL="$API_URL&uuid=${{ inputs.app_uuid }}"
+        if [ -n "${{ inputs.uuid }}" ]; then
+          API_URL="$API_URL&uuid=${{ inputs.uuid }}"
         fi
         
         # Add tag parameter if provided
