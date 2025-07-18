@@ -96,8 +96,9 @@ runs:
           
           # Extract deployment UUIDs if waiting is enabled
           if [ "${{ inputs.waitForDeploy }}" = "true" ]; then
-            # Extract all deployment UUIDs from the response
+            # Extract all deployment UUIDs and messages from the response
             DEPLOYMENT_UUIDS=$(echo "$RESPONSE_BODY" | jq -r '.deployments[]?.deployment_uuid // empty' | tr '\n' ' ')
+            DEPLOYMENT_MESSAGES=$(echo "$RESPONSE_BODY" | jq -r '.deployments[]?.message // empty')
             
             if [ -n "$DEPLOYMENT_UUIDS" ]; then
               # Convert to array and count deployments
@@ -106,6 +107,14 @@ runs:
               
               echo "⏳ Waiting for $DEPLOYMENT_COUNT deployment(s) to complete..."
               echo "Deployment UUIDs: $DEPLOYMENT_UUIDS"
+              
+              # Echo deployment messages
+              echo "📋 Deployment messages:"
+              echo "$DEPLOYMENT_MESSAGES" | while IFS= read -r message; do
+                if [ -n "$message" ]; then
+                  echo "  • $message"
+                fi
+              done
               
               # Wait for all deployments to complete
               TIMEOUT=${{ inputs.timeout }}
@@ -129,21 +138,27 @@ runs:
                   
                   if [ "$STATUS_HTTP" -eq 200 ]; then
                     DEPLOYMENT_STATUS=$(echo "$STATUS_BODY" | jq -r '.status // empty')
+                    APPLICATION_NAME=$(echo "$STATUS_BODY" | jq -r '.application_name // empty')
+                    
+                    # Use application name if available, otherwise fall back to UUID
+                    DEPLOYMENT_IDENTIFIER="${APPLICATION_NAME:-$DEPLOYMENT_UUID}"
                     
                     case $DEPLOYMENT_STATUS in
                       "successful"|"finished")
                         COMPLETED_COUNT=$((COMPLETED_COUNT + 1))
+                        echo "✅ Deployment $DEPLOYMENT_IDENTIFIER ($DEPLOYMENT_UUID) completed successfully!"
                         ;;
                       "failed"|"cancelled"|"skipped")
                         FAILED_COUNT=$((FAILED_COUNT + 1))
-                        echo "❌ Deployment $DEPLOYMENT_UUID failed with status: $DEPLOYMENT_STATUS"
+                        echo "❌ Deployment $DEPLOYMENT_IDENTIFIER ($DEPLOYMENT_UUID) failed with status: $DEPLOYMENT_STATUS"
                         ;;
                       "running"|"pending"|"queued"|"in_progress"|"processing")
                         IN_PROGRESS_COUNT=$((IN_PROGRESS_COUNT + 1))
+                        echo "⏳ Deployment $DEPLOYMENT_IDENTIFIER ($DEPLOYMENT_UUID) is in progress..."
                         ;;
                       *)
                         IN_PROGRESS_COUNT=$((IN_PROGRESS_COUNT + 1))
-                        echo "⚠️ Deployment $DEPLOYMENT_UUID has unknown status: $DEPLOYMENT_STATUS"
+                        echo "⚠️ Deployment $DEPLOYMENT_IDENTIFIER ($DEPLOYMENT_UUID) has unknown status: $DEPLOYMENT_STATUS"
                         ;;
                     esac
                   else
