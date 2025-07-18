@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.0](https://github.com/ChristopheCVB/coolify-deploy-action/compare/v3.0.1...v3.1.0) (2025-07-18)
+
+
+### Features
+
+* enhance deployment feedback by including messages and application names in action.yml ([3da8ebe](https://github.com/ChristopheCVB/coolify-deploy-action/commit/3da8ebeb898be7cbb40b4e0dded4f7ab5122a5b0))
+
 ## [3.0.1](https://github.com/ChristopheCVB/coolify-deploy-action/compare/v3.0.0...v3.0.1) (2025-07-06)
 
 
