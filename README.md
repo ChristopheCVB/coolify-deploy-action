@@ -48,6 +48,31 @@ A reusable GitHub Action for deploying applications to Coolify with optional dep
     tag: 'v1.0.0,v1.1.0'
 ```
 
+### Update Git Branch
+
+```yaml
+- name: Update Application Branch
+  uses: christophecvb/deploy-coolify-action@v1
+  with:
+    token: ${{ secrets.COOLIFY_API_TOKEN }}
+    domain: 'your-coolify-domain.com'
+    uuid: 'your-uuid'
+    git_branch: 'feature/new-branch'
+```
+
+### Update Branch and Deploy
+
+```yaml
+- name: Update Branch and Deploy
+  uses: christophecvb/deploy-coolify-action@v1
+  with:
+    token: ${{ secrets.COOLIFY_API_TOKEN }}
+    domain: 'your-coolify-domain.com'
+    uuid: 'your-uuid'
+    git_branch: 'production'
+    tag: 'v1.0.0'
+```
+
 ### Advanced Usage with Waiting
 
 ```yaml
@@ -72,16 +97,19 @@ A reusable GitHub Action for deploying applications to Coolify with optional dep
 | `uuid` | Resource UUID(s). Comma separated list is also accepted. | ⚠️ No* | - |
 | `tag` | Tag name(s) to deploy. Comma separated list is also accepted | ⚠️ No* | - |
 | `pr` | Pull Request Id for deploying specific PR builds. Cannot be used with tag parameter | ⚠️ No* | - |
+| `git_branch` | Git branch to switch to for the application. Requires uuid parameter | ⚠️ No* | - |
 | `force` | Force rebuild (without cache) | ❌ No | `false` |
 | `waitForDeploy` | Wait for deployment to complete | ❌ No | `false` |
 | `timeout` | Timeout in seconds for deployment waiting | ❌ No | `300` |
 | `interval` | Interval in seconds for deployment waiting | ❌ No | `10` |
 
-*At least one of `uuid`, `tag`, or `pr` must be provided. `tag` and `pr` cannot be used together.
+*At least one of `uuid`, `tag`, `pr`, or `git_branch` must be provided. `tag` and `pr` cannot be used together. `git_branch` requires `uuid`.
 
 ## Features
 
 - **Multiple Deployment Methods**: Deploy by UUID, tag, or pull request
+- **Git Branch Management**: Update application git branch without deploying
+- **Combined Operations**: Update git branch and deploy in one action
 - **Simple Deployment**: Just trigger a deployment without waiting
 - **Deployment Waiting**: Optionally wait for deployment completion
 - **Status Monitoring**: Monitors deployment status and provides feedback
@@ -204,4 +232,5 @@ jobs:
 - At least one of the following:
   - Valid application UUID, or
   - Valid tag name(s), or
-  - Valid pull request ID 
+  - Valid pull request ID, or
+  - Git branch name (requires valid application UUID) 
