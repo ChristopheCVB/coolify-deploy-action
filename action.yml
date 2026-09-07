@@ -79,8 +79,11 @@ runs:
         # Make the deployment request
         echo "Making deployment request to: $API_URL"
         DEPLOY_RESPONSE=$(curl -s -w "\n%{http_code}" \
+          -X POST \
           -H "Authorization: Bearer ${{ inputs.token }}" \
           -H "Content-Type: application/json" \
+          -H "Accept: application/json" \
+          -d '{}' \
           "$API_URL")
         
         # Extract response body and status code
