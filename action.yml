@@ -37,6 +37,9 @@ inputs:
     description: 'Interval in seconds for deployment waiting'
     required: false
     default: '10'
+  git_branch:
+    description: 'Git branch to switch to for the application. Requires uuid parameter.'
+    required: false
 
 runs:
   using: 'composite'
@@ -47,8 +50,8 @@ runs:
         echo "🚀 Deploying to Coolify..."
         
         # Validate required parameters
-        if [ -z "${{ inputs.uuid }}" ] && [ -z "${{ inputs.tag }}" ] && [ -z "${{ inputs.pr }}" ]; then
-          echo "❌ Error: At least one of uuid, tag, or pr must be provided"
+        if [ -z "${{ inputs.uuid }}" ] && [ -z "${{ inputs.tag }}" ] && [ -z "${{ inputs.pr }}" ] && [ -z "${{ inputs.git_branch }}" ]; then
+          echo "❌ Error: At least one of uuid, tag, pr, or git_branch must be provided"
           exit 1
         fi
         
@@ -56,6 +59,50 @@ runs:
         if [ -n "${{ inputs.tag }}" ] && [ -n "${{ inputs.pr }}" ]; then
           echo "❌ Error: Cannot use both tag and pr parameters together"
           exit 1
+        fi
+        
+        # Validate that git_branch requires uuid
+        if [ -n "${{ inputs.git_branch }}" ] && [ -z "${{ inputs.uuid }}" ]; then
+          echo "❌ Error: git_branch parameter requires uuid parameter"
+          exit 1
+        fi
+        
+        # Handle git branch update if requested
+        if [ -n "${{ inputs.git_branch }}" ]; then
+          echo "🔄 Updating git branch to '${{ inputs.git_branch }}' for application ${{ inputs.uuid }}..."
+          
+          # Build PATCH request body
+          PATCH_BODY='{"git_branch": "${{ inputs.git_branch }}"}'
+          
+          # Make the PATCH request to update the application
+          PATCH_RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X PATCH \
+            -H "Authorization: Bearer ${{ inputs.token }}" \
+            -H "Content-Type: application/json" \
+            -d "$PATCH_BODY" \
+            "https://${{ inputs.domain }}/api/v1/applications/${{ inputs.uuid }}")
+          
+          # Extract response body and status code
+          PATCH_HTTP_STATUS=$(echo "$PATCH_RESPONSE" | tail -n1)
+          PATCH_RESPONSE_BODY=$(echo "$PATCH_RESPONSE" | head -n -1)
+          
+          echo "PATCH Response status: $PATCH_HTTP_STATUS"
+          echo "PATCH Response body: $PATCH_RESPONSE_BODY"
+          
+          # Check if branch update was successful
+          if [ "$PATCH_HTTP_STATUS" -eq 200 ]; then
+            echo "✅ Git branch updated successfully to '${{ inputs.git_branch }}'"
+          else
+            echo "❌ Failed to update git branch with HTTP status: $PATCH_HTTP_STATUS"
+            echo "Response: $PATCH_RESPONSE_BODY"
+            exit 1
+          fi
+        fi
+        
+        # Skip deployment if only git_branch was provided
+        if [ -n "${{ inputs.git_branch }}" ] && [ -z "${{ inputs.tag }}" ] && [ -z "${{ inputs.pr }}" ]; then
+          echo "✅ Git branch update completed. No deployment requested."
+          exit 0
         fi
         
         # Build the API URL with parameters
