@@ -199,6 +199,7 @@ jobs:
 
 ## Requirements
 
+- Coolify `v4.0.0-beta.298` or newer. The action deploys with a `POST` request to `/api/v1/deploy`, which older Coolify builds reject with `405 Method Not Allowed`. Coolify `v4.2.0` made that endpoint `POST`-only, so instances on `v4.2.0` or newer require `v4` of this action.
 - `jq` must be available in the runner environment (included in Ubuntu runners)
 - Valid Coolify API token with deployment permissions
 - At least one of the following:
