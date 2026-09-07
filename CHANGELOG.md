@@ -1,5 +1,16 @@
 # Changelog
 
+## [4.0.0](https://github.com/ChristopheCVB/coolify-deploy-action/compare/v3.1.0...v4.0.0) (2026-09-07)
+
+
+### ⚠ BREAKING CHANGES
+
+* use POST for the Coolify deploy API request ([#13](https://github.com/ChristopheCVB/coolify-deploy-action/issues/13))
+
+### Bug Fixes
+
+* use POST for the Coolify deploy API request ([#13](https://github.com/ChristopheCVB/coolify-deploy-action/issues/13)) ([4769618](https://github.com/ChristopheCVB/coolify-deploy-action/commit/476961817b0e07f66697a739d1b496fbcccbee23))
+
 ## [3.1.0](https://github.com/ChristopheCVB/coolify-deploy-action/compare/v3.0.1...v3.1.0) (2025-07-18)
 
 
